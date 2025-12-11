@@ -1,6 +1,12 @@
 plugins {
     id 'com.enonic.xp.app' version '3.4.0'
+    id 'maven-publish'
 }
+
+java { 
+	sourceCompatibility = JavaVersion.VERSION_11 
+	targetCompatibility = JavaVersion.VERSION_11 
+} 
 
 app {
     name = "${appName}"
@@ -42,3 +48,15 @@ repositories {
         url 'https://repo.enonic.com/public/com/enonic/lib/lib-http-client/'
     }
 }
+
+
+publishing { 
+	publications { 
+		maven(MavenPublication) { 
+			groupId = project.group 
+			artifactId = project.name 
+			version = project.version 
+			from components.java 
+		} 
+	} 
+} 
