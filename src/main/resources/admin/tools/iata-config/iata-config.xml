@@ -1,0 +1,7 @@
+<tool>
+  <display-name i18n="admin-tool.iata-config.display-name">IATA Config</display-name>
+  <description i18n="admin-tool.iata-config.description">Set the config to be used in Automatic Translate App</description>
+  <allow>
+    <principal>role:system.admin</principal>
+  </allow>
+</tool>

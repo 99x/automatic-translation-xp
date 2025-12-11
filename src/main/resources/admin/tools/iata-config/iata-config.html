@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" th:href="${portal.assetUrl({'_path=iata-config/css/bootstrap.min.css'})}">
+    <link rel="stylesheet" th:href="${portal.assetUrl({'_path=iata-config/css/jstree/style.min.css'})}" />
+
+    <title>Automatic Translate App Config</title>
+
+    <style>
+        .toast-header.info {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .toast-header.error {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .toast-header.success {
+            background-color: #28a745;
+            color: #fff;
+        }
+        #tree-container {
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1>Automatic Translate App Config</h1>
+        <p>Tool to config some details about automatic translate app</p>
+
+        <!-- Site Selector -->
+        <div class="form-group">
+            <label for="site-selector">Site (repository):</label>
+            <select class="form-control" id="site-selector">
+                <option value=""></option>
+                <option th:each="site:${sites}"
+                    th:attr="data-site-id=${site.id},data-repo-id=${site.repoId},data-apps=${site.applications}"
+                    th:text="${site.displayName}"></option>
+            </select>
+        </div>
+
+        <!-- App Selector -->
+        <div class="form-group" style="display: none;">
+            <label for="app-selector">App:</label>
+            <select class="form-control" id="app-selector"></select>
+        </div>
+
+        <!-- Content tree -->
+        <div class="form-group content-tree" style="display: none;">
+            <label>Select fields to be ignored during the auto translate:</label>
+            <div id="tree-container"></div>
+            <button onclick="saveConfig()" type="button" class="btn btn-primary">
+                Save to CURRENT site/layer
+            </button>
+            <button onclick="saveConfig('all')" type="button" class="btn btn-secondary">
+                Save to ALL site/layers
+            </button>
+        </div>
+
+        <div class="position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;">
+            <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true"
+                data-delay="5000">
+                <div class="toast-header">
+                    <strong class="mr-auto toast-header-text"></strong>
+                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="toast-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="${portal.assetUrl({'_path=iata-config/js/jquery.min.js'})}"></script>
+    <script th:src="${portal.assetUrl({'_path=iata-config/js/popper.min.js'})}"></script>
+    <script th:src="${portal.assetUrl({'_path=iata-config/js/bootstrap.bundle.min.js'})}"></script>
+
+    <script th:src="${portal.assetUrl({'_path=iata-config/js/jstree.min.js'})}"></script>
+
+    <script>
+        function initTree(data) {
+            $('#tree-container').jstree({
+                'core': {
+                    'data': data,
+                    'themes': {
+                        'icons': false,
+                        'dots': false
+                    }
+                },
+                'plugins': ["checkbox"]
+            });
+            $('.content-tree').show()
+        }
+
+        function appSelectorListener() {
+            $('#app-selector').on('change', (event) => {
+                destroyTree()
+                const siteId = $('option:selected', '#site-selector').attr('data-site-id')
+                const repoId = $('option:selected', '#site-selector').attr('data-repo-id')
+                const appSelected = $(event.target).val()
+                const serviceUrl = '[[${services.manageConfig}]]' + `?application=${appSelected}&site=${siteId}&repo=${repoId}`
+
+                $.ajax({
+                    type: 'GET',
+                    url: serviceUrl,
+                    success: function (data) {
+                        initTree(data)
+                    },
+                    error: function (err) {
+                        console.error(err)
+                    }
+                })
+            })
+        }
+
+        function siteSelectorListener() {
+            $('#site-selector').on('change', (event) => {
+                destroyTree()
+                let appData = null
+                try {
+                    appData = JSON.parse($('option:selected', event.target).attr('data-apps'))
+                } catch (err) { }
+
+                if (appData && (appData.length > 0)) {
+                    $('#app-selector').empty()
+
+                    $('#app-selector').append($('<option>', {
+                        value: ''
+                    }))
+
+                    $.each(appData, function (i, app) {
+                        $('#app-selector').append($('<option>', {
+                            value: app.key,
+                            text: app.displayName
+                        }))
+                    })
+                    $('#app-selector').parent().show()
+                } else {
+                    $('#app-selector').parent().hide()
+                }
+            })
+        }
+
+        function destroyTree() {
+            $('.content-tree').hide()
+            $('#tree-container').jstree("destroy").empty()
+        }
+
+        function saveConfig(mode) {
+            const siteId = $('option:selected', '#site-selector').attr('data-site-id')
+            const repoId = $('option:selected', '#site-selector').attr('data-repo-id')
+            const appSelected = $('option:selected', '#app-selector').val()
+
+            $('.content-tree button').prop('disabled', true)
+
+            if (siteId && repoId && appSelected) {
+                let serviceUrl = '[[${services.manageConfig}]]' + `?application=${appSelected}&site=${siteId}&repo=${repoId}`
+
+                if (mode) serviceUrl += `&mode=${mode}`
+
+                $.ajax({
+                    type: 'PUT',
+                    url: serviceUrl,
+                    contentType: 'application/json',
+                    data: JSON.stringify(getCheckedItems()),
+                    success: function (data) {
+                        showToast('Success', 'Data saved successfully', 'success')
+                    },
+                    error: function (err) {
+                        console.error(err)
+                        showToast('Error', 'Check the browser log for details', 'error')
+                    }
+                }).always(function () {
+                    $('.content-tree button').prop('disabled', false)
+                })
+            }
+        }
+
+        function showToast(header, message, type) {
+            if (header && message) {
+                $('#liveToast .toast-header-text').text(header)
+                $('#liveToast .toast-body').text(message)
+
+                $('#liveToast .toast-header').removeClass('info error success').addClass(type || 'info')
+
+                $('#liveToast').toast('show')
+            }
+        }
+
+        function getCheckedItems() {
+            let config = {}
+            const selectedNodes = $('#tree-container').jstree("get_selected", true)
+            const selectedLeafNodes = selectedNodes.filter(function (node) {
+                return node.children.length === 0
+            })
+            selectedLeafNodes.forEach(selectedLeafNode => {
+                const refType = selectedLeafNode.li_attr['data-ref-type']
+                const parentKey = selectedLeafNode.li_attr['data-parent-key']
+                const dataKey = selectedLeafNode.li_attr['data-key']
+
+                if (!config[refType]) config[refType] = {}
+
+                if (!config[refType][parentKey]) config[refType][parentKey] = [dataKey]
+                else config[refType][parentKey].push(dataKey)
+            })
+            return config
+        }
+
+        $(document).ready(() => {
+            siteSelectorListener()
+            appSelectorListener()
+        })
+    </script>
+</body>
+
+</html>
