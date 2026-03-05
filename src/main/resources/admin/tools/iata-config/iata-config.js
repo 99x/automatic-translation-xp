@@ -15,7 +15,8 @@ exports.get = () => {
     const model = {
         sites,
         services: {
-            manageConfig: Portal.serviceUrl({ service: 'manage-config', type: 'absolute' })
+            manageConfig: Portal.serviceUrl({ service: 'manage-config', type: 'absolute' }),
+            translateAll: Portal.serviceUrl({ service: 'translate-all', type: 'absolute' })
         }
     }
     return {

@@ -1,0 +1,13 @@
+<task>
+    <description>Bulk translate all contents in a site</description>
+    <form>
+        <input type="TextLine" name="siteId">
+            <label>Site content ID</label>
+            <occurrences minimum="1" maximum="1"/>
+        </input>
+        <input type="TextLine" name="repoId">
+            <label>Repository ID (project id)</label>
+            <occurrences minimum="1" maximum="1"/>
+        </input>
+    </form>
+</task>

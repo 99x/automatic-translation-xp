@@ -63,6 +63,14 @@
             </button>
         </div>
 
+        <!-- Translate All -->
+        <div class="form-group translate-all-section" style="display: none;">
+            <hr>
+            <button id="translate-all-btn" onclick="translateAll()" type="button" class="btn btn-primary">
+                Translate All Contents
+            </button>
+        </div>
+
         <div class="position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;">
             <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true"
                 data-delay="5000">
@@ -96,6 +104,7 @@
                 'plugins': ["checkbox"]
             });
             $('.content-tree').show()
+            $('.translate-all-section').show()
         }
 
         function appSelectorListener() {
@@ -143,12 +152,14 @@
                     $('#app-selector').parent().show()
                 } else {
                     $('#app-selector').parent().hide()
+                    $('.translate-all-section').hide()
                 }
             })
         }
 
         function destroyTree() {
             $('.content-tree').hide()
+            $('.translate-all-section').hide()
             $('#tree-container').jstree("destroy").empty()
         }
 
@@ -191,6 +202,37 @@
 
                 $('#liveToast').toast('show')
             }
+        }
+
+        function translateAll() {
+            const siteId = $('option:selected', '#site-selector').attr('data-site-id')
+            const repoId = $('option:selected', '#site-selector').attr('data-repo-id')
+
+            if (!siteId || !repoId) {
+                showToast('Error', 'Please select a site first', 'error')
+                return
+            }
+
+            const serviceUrl = '[[${services.translateAll}]]'
+            const btn = document.getElementById('translate-all-btn')
+
+            btn.disabled = true
+
+            $.ajax({
+                type: 'POST',
+                url: serviceUrl,
+                contentType: 'application/json',
+                data: JSON.stringify({ siteId, repoId }),
+                success: function (data) {
+                    showToast('Success', 'Translation task started. Task ID: ' + (data.taskId || 'N/A'), 'success')
+                },
+                error: function (xhr) {
+                    const msg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Check the browser log for details'
+                    showToast('Error', msg, 'error')
+                }
+            }).always(function () {
+                btn.disabled = false
+            })
         }
 
         function getCheckedItems() {

@@ -37,6 +37,7 @@ dependencies {
     include "com.enonic.xp:lib-app:${xpVersion}"
 	include "com.enonic.xp:lib-project:${xpVersion}"
     include "com.enonic.xp:lib-repo:${xpVersion}"
+    include "com.enonic.xp:lib-task:${xpVersion}"
 }
 
 repositories {
