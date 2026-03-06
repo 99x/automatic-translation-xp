@@ -12,7 +12,7 @@ module.exports = {
     autoTranslate
 }
 
-function autoTranslate(contentId, config, siteConfig) {
+function autoTranslate(contentId, config, siteConfig, workflowState) {
     const content = Content.get({ key: contentId }) || {}
     const context = Context.get()
 
@@ -44,7 +44,7 @@ function autoTranslate(contentId, config, siteConfig) {
                 }
 
                 if (!node.workflow) node.workflow = {}
-                node.workflow.state = 'IN_PROGRESS'
+                node.workflow.state = workflowState === 'READY' ? 'READY' : 'IN_PROGRESS'
 
                 return node
             }

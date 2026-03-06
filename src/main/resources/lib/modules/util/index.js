@@ -10,7 +10,8 @@ module.exports = {
     isUrlValue,
     isUUIDValue,
     getAppConfig,
-    forceArray
+    forceArray,
+    areNodesInSync
 }
 
 function performRequest(request, MAX_RETRY = 3){
@@ -89,4 +90,34 @@ function forceArray(data) {
 		data = [data]
 	}
 	return data
+}
+
+function areNodesInSync(draftNode, masterNode) {
+    if (!draftNode || !masterNode) {
+        return false
+    }
+
+    const normalizeNodeForComparison = (value) => {
+        if (Array.isArray(value)) {
+            return value.map(normalizeNodeForComparison)
+        }
+    
+        if (!value || typeof value !== 'object') {
+            return value
+        }
+    
+        const normalized = {}
+    
+        Object.keys(value).sort().forEach((key) => {
+            if (key.startsWith('_')) {
+                return
+            }
+    
+            normalized[key] = normalizeNodeForComparison(value[key])
+        })
+    
+        return normalized
+    }
+
+    return JSON.stringify(normalizeNodeForComparison(draftNode)) === JSON.stringify(normalizeNodeForComparison(masterNode))
 }

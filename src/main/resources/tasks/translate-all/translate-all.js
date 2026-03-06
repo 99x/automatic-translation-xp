@@ -6,6 +6,7 @@ const Task = require('/lib/xp/task')
 const AutomaticTranslationConfig = require('/lib/modules/automatic-translation/config')
 const AutomaticTranslation = require('/lib/modules/automatic-translation')
 const Translate = require('/lib/modules/automatic-translation/translate')
+const Util = require('/lib/modules/util')
 
 const BATCH_SIZE = 100
 
@@ -147,15 +148,13 @@ exports.run = function(params, taskId) {
 
                     const draftNode = DraftRepo.get(contentId)
                     const masterNode = MasterRepo.get(contentId)
-                    const wasInSync = draftNode && masterNode && draftNode._versionKey === masterNode._versionKey
+                    const wasInSync = Util.areNodesInSync(draftNode, masterNode)
 
-                    Translate.autoTranslate(contentId, apiInfo, iataConfig)
+                    Translate.autoTranslate(contentId, apiInfo, iataConfig, 'READY')
 
                     if (wasInSync) {
                         Content.publish({
                             keys: [contentId],
-                            sourceBranch: 'draft',
-                            targetBranch: 'master',
                             includeDependencies: false
                         })
                     }
