@@ -98,7 +98,8 @@ exports.run = function(params, taskId) {
         const rawPath = site._path || ''
         const sitePath = rawPath.startsWith('/content') ? rawPath : `/content${rawPath.startsWith('/') ? rawPath : '/' + rawPath}`
         const escapedPath = sitePath.replace(/'/g, "''")
-        const excludedTypes = getFullyIgnoredContentTypes(iataConfig)
+        const staticExcludedTypes = ['portal:template-folder']
+        const excludedTypes = getFullyIgnoredContentTypes(iataConfig).concat(staticExcludedTypes)
         let queryStr = `_path LIKE '${escapedPath}/*'`
         if (excludedTypes.length > 0) {
             const typeList = excludedTypes.map(t => "'" + (t || '').split("'").join("''") + "'").join(', ')
